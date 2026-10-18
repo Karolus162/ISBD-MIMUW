@@ -2,16 +2,16 @@ use std::env;
 use std::fs::File;
 use std::os::unix::fs::FileExt;
 
+use memmap2::Mmap;
+
 mod hash;
 use hash::sum_block_hash;
-
-const BLOCK_SIZE: u64 = 512;
 
 fn main() {
 
     let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
-        println!("Usage: cargo run --release --bin latency filepath");
+    if args.len() != 3 {
+        println!("Usage: cargo run --release --bin throughput filepath block_size");
         return;
     }
 
@@ -27,25 +27,23 @@ fn main() {
         eprintln!("Error opening file: {}", args[1]);
         return;
     }
-    let total_size = metadata.unwrap().len();
-    let num_blocks = (total_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    let mut buffer = vec![0u8; BLOCK_SIZE as usize];
+    let block_size : u64 = args[2].parse().expect("Error: block_size must be a number");
+    assert!(block_size > 0, "Error: Block size block_size must be greater than 0");
+
+    let mmap = unsafe { Mmap::map(&file).expect("Error: Failed to map file into memory") };
+
+    let total_size = metadata.unwrap().len();
+    let num_blocks = (total_size + block_size - 1) / block_size;
+
     let mut result = vec![0u8; 16];
     for block_idx in 0..num_blocks
     {
-        let offset = block_idx * BLOCK_SIZE;
-        let bytes_to_read = std::cmp::min(BLOCK_SIZE, total_size - offset) as usize;
+        let offset = (block_idx * block_size) as usize;
+        let bytes_to_read = std::cmp::min(block_size, total_size - offset as u64) as usize;
 
-        // read
-        let target_buf = &mut buffer[..bytes_to_read];
-        let err = file.read_exact_at(target_buf, offset);
-        if err.is_err() {
-            eprintln!("Error reading file: {}", err.unwrap_err());
-            return;
-        }
-
-        // compute
+        let target_buf = &mmap[offset..offset + bytes_to_read];
+        
         let block_hash = md5::compute(target_buf);
         sum_block_hash(&mut result, &block_hash);
     }
