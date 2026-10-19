@@ -6,6 +6,7 @@ use rand::rngs::StdRng;
 
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc;
+use std::time::Instant;
 
 mod hash;
 use hash::sum_block_hash;
@@ -55,6 +56,12 @@ fn main() {
         return;
     }
 
+    let block_size : u64 = args[2].parse().expect("Error: M must be a number");
+    assert!(block_size > 0, "Error: M must be greater than 0");
+    let num_threads : usize = args[3].parse().expect("Error: N must be a number");
+    assert!(num_threads > 0, concat!("Error: N must be greater than 0",
+        "(at least one thread for reading and one thread for computing)"));
+
     let file_res = File::open(args[1].clone());
     if file_res.is_err() {
         eprintln!("File not found: {}", args[1]);
@@ -68,24 +75,21 @@ fn main() {
         return;
     }
 
-    let block_size : u64 = args[2].parse().expect("Error: block_size must be a number");
-    assert!(block_size > 0, "Error: Block size block_size must be greater than 0");
-    let num_threads : usize = args[3].parse().expect("Error: number of threads must be a number");
-    assert!(num_threads > 0, concat!("Error: Number of threads must be greater than 0",
-        "(at least one thread for reading and one thread for computing)"));
-
     let total_size = metadata.unwrap().len();
     let num_blocks = (total_size + block_size - 1) / block_size;
-    let random_iter = RandomOrderIterator::with_seed(num_blocks, RAND_SEED);
 
+    let random_iter = RandomOrderIterator::with_seed(num_blocks, RAND_SEED);    
     let mut offsets = Vec::with_capacity(num_blocks as usize);
     for block_idx in random_iter {
         let offset = block_idx * block_size;
         offsets.push(offset);
     }
     let shared_offsets = Arc::new(Mutex::new(offsets));
+
     let (tx, rx) = mpsc::sync_channel::<Vec<u8>>(num_blocks as usize);
 
+    let start = Instant::now();
+    
     for _ in 0..num_threads {
         let file_clone = Arc::clone(&file);
         let offsets_clone = Arc::clone(&shared_offsets);
@@ -131,9 +135,13 @@ fn main() {
             }
         }
     }
-    print!("{} 0x", args[1].clone());
-    for byte in &result {
-        print!("{:02x}", byte);
-    }
-    println!("");
+    // print!("{} 0x", args[1].clone());
+    // for byte in &result {
+    //     print!("{:02x}", byte);
+    // }
+    // println!("");
+
+    let duration = start.elapsed();
+
+   println!("{}", duration.as_micros());
 }

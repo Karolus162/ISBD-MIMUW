@@ -1,0 +1,11 @@
+file,block_size,time_seconds
+file_4kb,8,0.033562
+file_4kb,32,0.009064
+file_4kb,128,0.002091
+file_4kb,512,0.000625
+file_4kb,4096,0.000188
+file_4mb,512,0.569998
+file_4mb,4096,0.075288
+file_4mb,65536,0.018562
+file_4mb,1048576,0.015568
+file_4mb,4194304,0.016185
