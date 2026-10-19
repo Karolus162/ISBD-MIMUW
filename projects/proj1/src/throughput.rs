@@ -1,6 +1,7 @@
 use std::env;
 use std::fs::File;
-use std::os::unix::fs::FileExt;
+
+use std::time::Instant;
 
 use memmap2::Mmap;
 
@@ -28,15 +29,18 @@ fn main() {
         return;
     }
 
-    let block_size : u64 = args[2].parse().expect("Error: block_size must be a number");
-    assert!(block_size > 0, "Error: Block size block_size must be greater than 0");
-
-    let mmap = unsafe { Mmap::map(&file).expect("Error: Failed to map file into memory") };
+    let block_size : u64 = args[2].parse().expect("Error: M must be a number");
+    assert!(block_size > 0, "Error: M must be greater than 0");
 
     let total_size = metadata.unwrap().len();
     let num_blocks = (total_size + block_size - 1) / block_size;
 
     let mut result = vec![0u8; 16];
+
+    let start = Instant::now();
+
+    let mmap = unsafe { Mmap::map(&file).expect("Error: Failed to map file into memory") };
+
     for block_idx in 0..num_blocks
     {
         let offset = (block_idx * block_size) as usize;
@@ -47,10 +51,12 @@ fn main() {
         let block_hash = md5::compute(target_buf);
         sum_block_hash(&mut result, &block_hash);
     }
-    print!("{} 0x", args[1].clone());
-    for byte in &result {
-        print!("{:02x}", byte);
-    }
-    println!("");
+    // print!("{} 0x", args[1].clone());
+    // for byte in &result {
+    //     print!("{:02x}", byte);
+    // }
+    // println!("");
 
+    let duration = start.elapsed();
+    println!("{}", duration.as_micros());
 }
