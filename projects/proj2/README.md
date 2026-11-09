@@ -57,7 +57,7 @@ Każdy batch składa się z dwóch części:
 
 ### 3.2. Kolumna BOOL
 
-* **Kodowanie:** Wartości logiczne są spakowane bitowo. Zajmują dokładnie $\lceil \text{row\_count} / 8 \rceil$ bajtów.
+* **Kodowanie:** Wartości logiczne są spakowane bitowo. Zajmują dokładnie $\lceil \mathit{row\_count} / 8 \rceil$ bajtów.
 * Dla n-tego boola (indeksowanego od 0):
   * Znajduje się on na bajcie o indeksie $\lfloor n / 8 \rfloor$.
   * Pozycja bitu wewnątrz tego bajtu to $n \pmod 8$.
