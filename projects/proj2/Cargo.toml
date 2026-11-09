@@ -1,0 +1,17 @@
+[package]
+name = "proj2"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "gen_example"
+path = "src/gen_example_file.rs"
+
+[[bin]]
+name = "calculate_metrics"
+path = "src/calculate_metrics.rs"
+
+[dependencies]
+num_enum = "0.7"
+zstd = "0.13"
+rand = "0.8"
